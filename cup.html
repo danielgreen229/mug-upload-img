@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<title>Cup</title>
+	<style type="text/css">	
+		.main__container::-webkit-scrollbar {
+		  display: none;
+		}
+		.main__container {
+		  -ms-overflow-style: none; 
+		  scrollbar-width: none; 
+		}
+		body {
+			margin: 0;
+			font-family: sans-serif;
+		}
+		.button {
+		  display: inline-block;
+		  padding: 10px;
+		  background: #ccc;
+		  cursor: pointer;
+		  border-radius: 5px;
+		  border: 1px solid #ccc;
+		}
+		.button:hover {
+		  background: #ddd;
+		}
+		#app {
+		    background-image: linear-gradient(180deg, rgba(224,225,255,0.64) 0%, rgba(0,0,0,0.04) 100%);
+			margin: 0;
+		    height: 100vh;
+		    width: 100%;
+		}
+ 		#mug-result__canvas {
+ 			position: absolute;
+   		    transform: scale(0.5) translateX(-50%);
+    		transform-origin: top left;
+    		left: 50%;
+ 		}
+ 		.block-mug-result__div {
+ 			position: relative;
+ 			width: 100%;
+    		height: 100%;
+ 		}
+ 		.main__container {
+ 			height: 100vh;
+		    width: calc(100vw - 30vw);
+		    margin: 0 15vw 0 15vw;
+		    background-color: white;
+		    overflow-x: hidden;
+ 		}
+		p {
+		  	margin: 0;
+		  	padding: 0;
+		  	font-size: 18px;
+		  	font-weight: bold;
+		}
+		h1 {
+			font-size: 48px;
+			font-weight: bold;
+			padding: 0;	
+		}
+		.dropzone-area {
+		    width: 200px;
+		    height: 200px;
+		    position: absolute;
+		    border: 2px dashed #CBCBCB;
+		    margin-top: 280px;
+		    margin-left: 50%;
+		    z-index: 1;
+		    background-color: white;
+		    transform: translateX(-50%);
+		    left: -44px;
+		}
+		.dropzone-area:hover {
+			border: 2px dashed black;
+		}
+		.dropzone-area input {
+		    position: absolute;
+		    cursor: pointer;
+		    top: 0px;
+		    right: 0;
+		    bottom: 0;
+		    left: 0;
+		    width: 100%;
+		    height: 100%;
+		    opacity: 0;
+		}
+		.dropzone-text {
+		    position: absolute;
+		    top: 50%;
+		    text-align: center;
+		    transform: translate(0, -50%);
+		    width: 100%; 
+		}
+		.dropzone-button {
+		    position: absolute;
+		    display: none;
+		}
+		.dropzone-over {
+		  	border: 2px dashed black;
+		}
+		.reload__button {
+			background-image: url("https://img.icons8.com/sf-black/5000/000000/undo.png");
+			background-size: contain;
+		    height: 50px;
+		    width: 50px;
+		    background-repeat: no-repeat;
+		    left: 210px;
+		    margin-left: 50%;
+		    transform: translateX(-50%);
+		    position: absolute;
+		    top: 50px;
+		    cursor: pointer;
+		        z-index: 1;
+		}
+ 		@media screen and (max-width: 1000px) {
+ 			#app {
+ 				background-image: none; 
+ 			}
+ 			#drop-area {
+ 				width: 90%;
+ 			}
+ 		}
+
+  	</style>
+</head>
+<body>
+	<div id="app">
+		<div class="main__container">
+			<div class="reload__button" @click="clearCanvas"></div>
+		        <div v-if="!loadedImg"
+			        :class="['dropzone-area', dragging ? 'dropzone-over' : '']" 
+				        drag-over="handleDragOver" 
+				        @dragenter="dragging=true" 
+				        @dragleave="dragging=false">
+			        <div class="dropzone-text">
+			            <p class="dropzone-title">Выберите фотографию на кружку</p>
+			        </div>
+			        <input type="file" @change="onFileChange">
+			    </div>
+			<div class="block-mug-result__div">
+				<div id="mug-result__canvas">
+				   <canvas id="canvas1"></canvas>
+			    </div>	
+			</div>	
+		</div>
+	</div>
+	<script>
+		new Vue({
+   			el: "#app",
+		  	data() {
+		    	return {
+		    		loadedImg: null,
+ 					dragging: false
+		    	};
+		  	},
+		  	watch: {
+		  		loadedImg () {
+		  			if(this.loadedImg != null) this.loadUpperIMage()
+		  		}
+		  	},
+		  	methods: {
+		  		clearCanvas() {
+		  			if(this.loadedImg != null) {
+		  				var canvas = document.getElementById("canvas1");
+				  		var ctx = canvas.getContext("2d");
+			  			ctx.clearRect(0,0, 1472, 1472)
+			  			this.drawCanvas()
+			  			this.loadedImg = null
+		  			}
+		  		},
+		  		onFileChange(e) {
+			        var files = e.target.files || e.dataTransfer.files;
+			        if (!files.length) return;
+			        this.createImage(files[0]);
+			    },
+			    createImage(file) {
+			        var image = new Image();
+			        var reader = new FileReader();
+			        reader.onload = (e) => {
+	              		this.loadedImg = e.target.result;
+			        };
+			        reader.readAsDataURL(file);
+			    },
+			    removeImage: function (e) {
+			        this.image = '';
+			    },
+		   		drawCanvas() {
+			  		var canvas = document.getElementById("canvas1");
+			  		var ctx = canvas.getContext("2d");
+			  		var productImg = new Image();
+			  		productImg.onload = function() {
+					  	canvas.width = 1472;
+					    canvas.height = 1472;
+					  	var factor  = Math.min ( canvas.width / productImg.width, canvas.height / productImg.height );
+						ctx.scale(factor, factor);
+					    var iw = productImg.width;
+					    var ih = productImg.height;
+					    ctx.drawImage(productImg, 0, 0, productImg.width, productImg.height,
+					      0, 0, iw, ih);
+					    ctx.scale(1 / factor, 1 / factor);
+					};
+			  		productImg.src = "mug.png"
+				},
+				loadUpperIMage() {
+					var canvas = document.getElementById("canvas1");
+			  		var ctx = canvas.getContext("2d");
+				    var img = new Image();
+				    img.src = this.loadedImg
+				    img.onload = function() {
+				    	var iw = img.width;
+				      	var ih = img.height;
+				      	var xOffset = 311.5,
+				      	yOffset = 285
+				      	var a = 334; 
+				       	var b = 90; 
+				      	var scaleFactor = iw / (2 * a);
+				      	for (var X = 4; X < iw - 4; X += 1) {
+				        	var y = b / a * Math.sqrt(a * a - (X - a) * (X - a)); // ellipsis equation
+				        	ctx.drawImage(img, X * scaleFactor, 0, 1, ih, X + xOffset, y + yOffset, 1, 840);
+				      	}
+
+				    };
+				}
+		  	},
+		  	mounted() {
+		  		this.drawCanvas()
+		  	}
+		})
+	</script>
+</body>
+</html>
+
